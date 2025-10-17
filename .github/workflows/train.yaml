@@ -1,58 +1,79 @@
 name: Train Model on Push
 
-# This workflow automatically trains your model whenever you push new code
-# and then commits the trained model file back into the repository.
+# -------------------------------------------------------------
+# This GitHub Actions workflow trains your ML model automatically
+# every time code is pushed to the main branch.
+# It then commits the trained model (even if unchanged)
+# and uploads it as an artifact for download.
+# -------------------------------------------------------------
 
 on:
   push:
     branches:
-      - main  # You can also add: - dev
+      - main   # You can add more branches, e.g. - dev
 
 jobs:
   train:
     runs-on: ubuntu-latest
 
-    # This gives GitHub Actions permission to push changes to your repo.
+    # Grant GitHub Actions permission to push commits to your repo.
     permissions:
       contents: write
 
     steps:
-      # Step 1: Checkout your repository code into the GitHub runner.
+      # ---------------------------------------------------------
+      # Step 1: Checkout the repository into the GitHub runner.
+      # ---------------------------------------------------------
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Step 2: Set up a Python environment.
+      # ---------------------------------------------------------
+      # Step 2: Set up the Python environment for training.
+      # ---------------------------------------------------------
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.10"
 
-      # Step 3: Install all required Python dependencies.
+      # ---------------------------------------------------------
+      # Step 3: Install all required dependencies.
+      # This includes libraries for data processing, modeling,
+      # experiment tracking (Weights & Biases), and Streamlit.
+      # ---------------------------------------------------------
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip setuptools wheel
           pip install -r requirements.txt
-          # Ensure critical ML libraries are available even if not listed
+          # Ensure critical libraries are available even if missing in requirements.txt
           pip install wandb==0.22.2 scikit-learn==1.7.2 pandas==2.3.2 numpy==2.2.4 joblib streamlit==1.49.1
-          echo "Installed dependencies successfully."
+          echo "Dependencies installed successfully."
 
+      # ---------------------------------------------------------
       # Step 4: Configure Weights & Biases using your secret API key.
+      # The key is securely stored in the repository secrets.
+      # ---------------------------------------------------------
       - name: Configure Weights & Biases
         env:
           WANDB_API_KEY: ${{ secrets.WANDB_API_KEY }}
         run: |
-          echo "W&B API key successfully configured."
+          echo "Weights & Biases configured."
 
-      # Step 5: Run your model training script.
-      # This will train and save your model to the 'models/' directory.
+      # ---------------------------------------------------------
+      # Step 5: Run the training script.
+      # This script will train your Logistic Regression model
+      # and save it as 'models/logistic_regression_tuned.pkl'.
+      # ---------------------------------------------------------
       - name: Run training script
         env:
           WANDB_API_KEY: ${{ secrets.WANDB_API_KEY }}
         run: |
           python train.py
 
-      # Step 6: Commit and push the trained model to the repository.
-      # The 'force add' ensures Git adds the model even if it already exists.
+      # ---------------------------------------------------------
+      # Step 6: Commit and push the trained model.
+      # The '-f' (force add) ensures the model is always included,
+      # and the commit command includes a timestamp for clarity.
+      # ---------------------------------------------------------
       - name: Commit and push trained model
         run: |
           if [ -f models/logistic_regression_tuned.pkl ]; then
@@ -60,14 +81,16 @@ jobs:
             git config --global user.name "github-actions[bot]"
             git config --global user.email "github-actions[bot]@users.noreply.github.com"
             git add -f models/logistic_regression_tuned.pkl
-            git commit -m "Auto-update trained model on $(date '+%Y-%m-%d %H:%M:%S')" || echo "No changes to commit (same model)"
-            git push origin main || echo "Push skipped or no permission"
+            git commit -m "Auto-update trained model on $(date '+%Y-%m-%d %H:%M:%S')" || echo "No new changes detected."
+            git push origin main || echo "Push skipped (no permission or branch protection)."
           else
             echo "Model file not found at models/logistic_regression_tuned.pkl"
           fi
 
-      # Step 7: Upload the trained model file as a build artifact.
-      # You can download it from the GitHub Actions run summary.
+      # ---------------------------------------------------------
+      # Step 7: Upload the trained model as a workflow artifact.
+      # This ensures you can download it directly from the Actions tab.
+      # ---------------------------------------------------------
       - name: Upload trained model artifact
         if: always()
         uses: actions/upload-artifact@v4
