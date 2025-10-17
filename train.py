@@ -271,8 +271,15 @@ def train_and_log_best_model(X_train, X_test, y_train, y_test, best_config, swee
     for k, v in tuned_metrics.items():
         print(f"{k}: {v:.4f}")
 
-    # Save and log tuned model
-    joblib.dump(best_model, "models/logistic_regression_tuned.pkl")
+    from datetime import datetime
+    # Create a timestamped filename for versioning
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    model_filename = f"models/logistic_regression_tuned_{timestamp}.pkl"
+
+    # Save the model
+    joblib.dump(best_model, model_filename)
+    print(f"Model saved to {model_filename}")
+
 
     tuned_artifact = wandb.Artifact(
         name="logistic-regression-tuned",
