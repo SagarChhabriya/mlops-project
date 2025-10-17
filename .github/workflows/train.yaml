@@ -1,0 +1,44 @@
+name: Train Model on Push
+
+on:
+  push:
+    branches:
+      - main
+      # - dev  # optional
+
+jobs:
+  train:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install wandb scikit-learn pandas joblib
+
+      - name: Configure Weights & Biases
+        env:
+          WANDB_API_KEY: ${{ secrets.WANDB_API_KEY }}
+        run: |
+          echo "W&B configured successfully!"
+
+      - name: Run training script
+        env:
+          WANDB_API_KEY: ${{ secrets.WANDB_API_KEY }}
+        run: |
+          python train.py
+
+      - name: Upload trained model
+        uses: actions/upload-artifact@v4
+        with:
+          name: logistic_regression_tuned
+          path: models/logistic_regression_tuned.pkl

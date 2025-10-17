@@ -3,6 +3,10 @@ __pycache__/
 *.py[codz]
 *$py.class
 
+
+logistic-regression-case-study\wandb
+wandb
+
 # C extensions
 *.so
 
