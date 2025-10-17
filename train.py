@@ -16,6 +16,11 @@ from requests.exceptions import HTTPError
 import warnings
 warnings.filterwarnings('ignore')
 
+
+wandb.login(key=os.getenv("WANDB_API_KEY"))
+wandb.init(project="mlops-project", job_type="training")
+print("✅ W&B run started:", wandb.run.name)
+
 # --- Global Configuration and Data Loading ---
 
 PROJECT = "mlops-project"
