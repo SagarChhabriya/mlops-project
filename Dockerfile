@@ -13,11 +13,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy all project files
 COPY . .
 
-# Set Streamlit to use port 8080 (Cloud Run default)
-ENV PORT=8080
+# Expose default Streamlit port for local use
+EXPOSE 8501
 
-# Expose port for local debugging (Cloud Run auto-detects 8080)
-EXPOSE 8080
+# Use dynamic PORT for Cloud Run, fallback to 8501 locally
+ENV PORT=8501
 
-# Run the Streamlit app
-CMD ["streamlit", "run", "app.py", "--server.port=8080", "--server.address=0.0.0.0"]
+# Run Streamlit using dynamic port (Cloud Run sets $PORT)
+CMD ["sh", "-c", "streamlit run app.py --server.port=$PORT --server.address=0.0.0.0"]
